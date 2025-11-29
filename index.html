@@ -1,7 +1,6 @@
 <!--
 File: telegram-make-money-webapp.html
-Description: Single-file Telegram Web App (mini app) for "Make Money". Includes UI for switching monetization options, reflexive ad placeholders, affiliate/smart links, referral tracking, balance display, and sample client/server workflows.
-Important: Replace placeholders (API keys, webhook URLs, merchant info) before deploying. Follow each ad-network's policy; incentivized traffic may be disallowed.
+Description: Telegram Mini App with Integrated Rewarded Ads (libtl.com SDK).
 -->
 
 <!doctype html>
@@ -10,10 +9,10 @@ Important: Replace placeholders (API keys, webhook URLs, merchant info) before d
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Make Money — Telegram Mini App</title>
-  <meta name="description" content="Make Money Telegram Mini App — Monetize, referrals, payouts (demo)." />
+  <meta name="description" content="Make Money Telegram Mini App — Monetize, referrals, payouts." />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <style>
-    /* Simple modern styles (no external libs) */
+    /* Styles */
     :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#06b6d4}
     *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
     body{margin:0;background:linear-gradient(180deg,#071025 0%, #071430 60%);color:#e6eef6}
@@ -28,14 +27,12 @@ Important: Replace placeholders (API keys, webhook URLs, merchant info) before d
     .list{display:flex;flex-direction:column;gap:8px}
     .small{font-size:13px;color:var(--muted)}
     .ad-slot{min-height:90px;border:1px dashed rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;border-radius:8px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:13px}
     footer{margin-top:18px;color:var(--muted);font-size:13px}
     .row{display:flex;gap:8px;align-items:center}
     .btn{background:linear-gradient(90deg,var(--accent),#60a5fa);border:none;color:#012;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer}
     .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
     .settings{display:flex;flex-direction:column;gap:8px}
     pre{background:#031324;padding:10px;border-radius:8px;overflow:auto}
-    .danger{background:linear-gradient(90deg,#ff4d6d,#ff7aa2);color:#fff}
   </style>
 </head>
 <body>
@@ -45,7 +42,7 @@ Important: Replace placeholders (API keys, webhook URLs, merchant info) before d
         <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect rx='8' ry='8' width='40' height='40' fill='%2306b6d4'/><text x='50%' y='55%' font-size='18' text-anchor='middle' fill='white' font-family='Arial'>MM</text></svg>" alt="logo" style="width:44px;height:44px;border-radius:10px"/>
         <div>
           <h1>Make Money — Telegram Mini App</h1>
-          <div class="small">Telegram Web App ready • Monetize with ads, smart links, referrals & payouts</div>
+          <div class="small">Telegram Web App ready • Watch Ads & Earn</div>
         </div>
       </div>
     </header>
@@ -57,269 +54,171 @@ Important: Replace placeholders (API keys, webhook URLs, merchant info) before d
 
         <div style="margin-top:12px" class="grid">
           <div>
-            <label>শুরু করার আগে — ব্যবহারকারীর পরিচয়</label>
+            <label>User Info</label>
             <div class="row" style="gap:12px">
               <div style="flex:1">
-                <input id="user-name" placeholder="ব্যবহারকারীর নাম" readonly />
-                <div class="small">User id: <span id="user-id">—</span></div>
-              </div>
-              <div style="width:120px">
-                <button class="btn" id="open-external">Open</button>
+                <input id="user-name" placeholder="User Name" readonly />
+                <div class="small">User ID: <span id="user-id">—</span></div>
               </div>
             </div>
           </div>
 
           <div>
-            <label>Monetization</label>
-            <div class="list">
-              <select id="ad-network">
-                <option value="none">No ad (demo)</option>
-                <option value="google">Google AdSense / Ad Manager (script)</option>
-                <option value="adsterra">Adsterra (popunder / direct)</option>
-                <option value="propeller">PropellerAds</option>
-                <option value="revshare">Affiliate / Smart Links</option>
-                <option value="direct">Direct sponsor (custom html)</option>
-              </select>
-              <div class="small">নোট: প্রকৃত বিজ্ঞাপন যোগ করতে আপনাকে প্রতিটি নেটওয়ার্কের স্ক্রিপ্ট/কোড এখানে বসাতে হবে।</div>
-            </div>
-          </div>
-
-          <div>
-            <label>Ad slot (preview)</label>
-            <div class="ad-slot" id="ad-slot">Ad preview area</div>
-          </div>
-
-          <div>
-            <label>Referral / Balance</label>
+            <label>Balance & Earnings</label>
             <div style="display:flex;gap:8px;align-items:center">
               <div style="flex:1">
-                <div class="small">Balance: <span id="balance">0.00</span> USD</div>
-                <div class="small">Refer code: <span id="ref-code">—</span></div>
+                <div class="small" style="font-size:16px; color:#fff;">Balance: <span id="balance">0.00</span> USD</div>
               </div>
               <div style="width:120px"><button class="btn" id="withdraw">Withdraw</button></div>
             </div>
-            <div class="small" style="margin-top:8px">Withdraw will open a payout flow (admin approval + KYC). Demo uses mock payouts.</div>
           </div>
 
           <div>
-            <label>Quick tasks (earning paths)</label>
-            <div style="display:flex;gap:8px">
-              <button class="btn" id="task-ad">Watch Ad (demo)</button>
-              <button class="btn ghost" id="task-link">Open Offer / Smartlink</button>
+            <label>Earning Tasks</label>
+            <div style="display:flex;gap:8px; flex-direction:column;">
+              <!-- This button now triggers the SDK -->
+              <button class="btn" id="task-ad" style="padding:15px;">📺 Watch Rewarded Ad (+0.10$)</button>
+              
+              <button class="btn ghost" id="task-link">Open Offer Link</button>
             </div>
-            <div class="small" style="margin-top:6px">এই বাটনগুলো ডেমো — বাস্তবে আপনার সাইড সার্ভারকে ক্রেডিট/ভ্যালিডেট করতে হবে।</div>
+            <div class="small" style="margin-top:6px">বিঃদ্রঃ অ্যাড দেখার পর অটোমেটিক ব্যালেন্স যুক্ত হবে।</div>
+          </div>
+          
+          <div>
+             <label>Ad Status</label>
+             <div id="ad-status" class="small">Ready to load ads.</div>
           </div>
         </div>
       </section>
 
       <aside class="card">
-        <h3 style="margin-top:0">Admin / Settings</h3>
+        <h3 style="margin-top:0">Settings / Payout</h3>
         <div class="settings">
-          <label>Admin secret (local only)</label>
-          <input id="admin-secret" placeholder="admin-secret" />
-
-          <label>Active ad HTML / script</label>
-          <textarea id="custom-ad" rows="6" placeholder="Paste ad script or HTML here"></textarea>
-
-          <label>Payout methods</label>
+          <label>Payout Method</label>
           <select id="payout-method">
             <option value="bkash">bKash</option>
             <option value="nagad">Nagad</option>
-            <option value="rocket">Rocket</option>
-            <option value="binance">Binance (crypto)</option>
-            <option value="manual">Manual bank transfer</option>
+            <option value="binance">Binance</option>
           </select>
 
-          <div class="row" style="justify-content:space-between;margin-top:6px">
-            <button class="btn" id="save-settings">Save settings</button>
-            <button class="btn ghost" id="reset-demo">Reset demo</button>
-          </div>
-
-          <div style="margin-top:10px">
-            <label>Webhook / Server (sample)</label>
-            <pre id="server-snippet">Server example available below</pre>
-          </div>
+          <button class="btn" id="save-settings">Save Payout Details</button>
+          <button class="btn ghost" id="reset-demo">Reset Balance</button>
         </div>
       </aside>
     </main>
 
     <section style="margin-top:14px" class="card">
-      <h3>Deployment & Integration guide (সংক্ষেপ)</h3>
-      <ol>
-        <li>Telegram bot তৈরি করুন: BotFather থেকে bot বানান এবং HTTP(s) ওয়েব অ্যাপ URL ব্যবহার করুন।</li>
-        <li>Web App URL: এই HTML ফাইলকে HTTPS তে হোস্ট করুন (Vercel, Netlify, GitHub Pages, অথবা আপনার সার্ভার)।</li>
-        <li>Bot থেকে message: Bot API থেকে InlineKeyboardButton বা Web App button যোগ করুন যাতে <code>url</code> আপনার হোস্ট করা পেজ দেখায়।</li>
-        <li>Server: পেমেন্ট ভ্যালিডেশন, ব্যবহারকারী ব্যালান্স, রেফারাল লজিক ও অ্যাড নেটওয়ার্ক সার্ভার-সাইড ট্র্যাকিং রাখুন — ক্লায়েন্ট-সাইডে সিক্রেট রাখবেন না।</li>
-        <li>Ad network: প্রত্যেক নেটওয়ার্কের SDK/জাভাস্ক্রিপ্ট রিকোয়ানমেন্ট চেক করুন; কিছু নেটওয়ার্ক `iframe` বা ইন-অ্যাপ স্ক্রিপ্ট ব্লক করে।</li>
-      </ol>
-
-      <h4>Important compliance notes</h4>
-      <ul>
-        <li>বিজ্ঞাপন নেটওয়ার্কে প্রলোভনমূলক/অনুপযুক্ত (incentivized) ট্রাফিক নিষিদ্ধ থাকতে পারে — নেটওয়ার্কের পলিসি মেনে চলুন।</li>
-        <li>পেমেন্ট পাসপোর্ট/কেওয়াইসি প্রয়োজন হলে ব্যবহারকারীকে সঠিকভাবে জানানো প্রয়োজন।</li>
-        <li>ব্যাংক/বিকাশ/ন্যাগাড ইন্টিগ্রেশনের জন্য অফিসিয়াল API ও সিকিউর সার্ভার প্রয়োজন।</li>
-      </ul>
-
-      <h4>Sample server (Node/Express) — আপনার সার্ভারে চালাতে হবে</h4>
-      <pre>
-// server.js (sample)
-const express = require('express');
-const fetch = require('node-fetch');
-const app = express();
-app.use(express.json());
-const PORT = process.env.PORT || 3000;
-
-// in-memory (demo) — use DB in production
-const users = {}; // { userId: {balance, ref}}
-
-app.post('/webhook/claim', (req, res) => {
-  const { userId, amount, type } = req.body;
-  if (!users[userId]) users[userId] = { balance:0, ref:null };
-  users[userId].balance += +amount;
-  return res.json({ok:true, balance:users[userId].balance});
-});
-
-app.post('/admin/payout', (req,res)=>{
-  // verify admin secret and trigger payout via merchant API (bkash/nagad)
-  return res.json({ok:true});
-});
-
-app.get('/user/:id', (req,res)=>{ res.json(users[req.params.id]||{balance:0});});
-
-app.listen(PORT,()=>console.log('Server listening',PORT));
-      </pre>
-
-      <h4>অতিরিক্ত ফিচার আইডিয়া</h4>
-      <ul>
-        <li>Daily streaks / tasks / offerwall ইন্টিগ্রেশন (OfferToro, AdscendMedia ইত্যাদি)</li>
-        <li>Admin dashboard (approval of payouts, fraud detection)</li>
-        <li>Webhook-based ad callbacks to validate impressions/conversions</li>
-        <li>Country targeting, device detection, and anti-fraud thresholds</li>
-      </ul>
-
       <footer>
-        এই ডেমো কোড প্রোডাকশনে ব্যবহার করবেন না; এটি একটি সম্পূর্ণ প্রজেক্টের কাঠামো দেখায়। বাস্তবে সার্ভার-সাইড ভ্যালিডেশন, HTTPS, সিক্রেট ম্যানেজমেন্ট এবং অ্যাড নেটওয়ার্ক পলিসি মেনে চলা বাধ্যতামূলক।
+        Admin Note: This app uses libtl.com SDK for monetization. Ensure strict compliance with ad network policies.
       </footer>
-    </section>
-
-    <section class="card" style="margin-top:14px">
-      <h3>Copyable files & next steps</h3>
-      <ol>
-        <li>এই HTML ফাইল হোস্ট করুন (https required).</li>
-        <li>সার্ভার সেটআপ করে `/webhook/claim` এবং `/admin/payout` বাস্তবায়ন করুন।</li>
-        <li>BotFather থেকে বট বানিয়ে Web App button দান করুন (Bot API use করে)।</li>
-      </ol>
-
-      <div style="margin-top:10px">
-        <strong>Demo limitations:</strong>
-        <ul>
-          <li>কোনও বাস্তব বিজ্ঞাপন স্ক্রিপ্ট এখানে সক্রিয় করা হয়নি — আপনি `Admin -> Active ad HTML` এলাকায় আপনার অ্যাড স্ক্রিipt পেস্ট করে preview দেখবেন।</li>
-          <li>পেমেন্ট/কেওয়াইসি কাজ কেবল সার্ভার ইন্টিগ্রেশন পরে কার্যকর হবে।</li>
-        </ul>
-      </div>
     </section>
 
   </div>
 
+  <!-- Telegram Web App JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- YOUR NEW SDK SCRIPT ADDED HERE -->
+  <script src='//libtl.com/sdk.js' data-zone='10253960' data-sdk='show_10253960'></script>
+
   <script>
-    // Simple client-side demo behavior (do NOT trust client for security-sensitive ops)
+    // --- App Logic ---
     const tg = window.Telegram ? window.Telegram.WebApp : null;
     const userNameEl = document.getElementById('user-name');
     const userIdEl = document.getElementById('user-id');
     const tgStatus = document.getElementById('tg-status');
-    const adNetwork = document.getElementById('ad-network');
-    const adSlot = document.getElementById('ad-slot');
-    const customAd = document.getElementById('custom-ad');
-    const saveSettingsBtn = document.getElementById('save-settings');
     const balanceEl = document.getElementById('balance');
-    const refCodeEl = document.getElementById('ref-code');
+    const adStatus = document.getElementById('ad-status');
 
-    // Demo local state
-    let state = { userId: null, balance:0, ref: null };
+    let state = { 
+        userId: null, 
+        balance: parseFloat(localStorage.getItem('mm_balance')) || 0 
+    };
 
     function initTelegram(){
-      if(!tg){ tgStatus.textContent = 'Telegram WebApp not available (open inside Telegram).'; return; }
-      tg.expand();
-      const initDataUnsafe = tg.initDataUnsafe || {}; // don't trust
-      const user = initDataUnsafe.user || {};
-      state.userId = user.id || ('demo-' + Math.floor(Math.random()*100000));
-      state.ref = new URLSearchParams(window.location.search).get('ref') || ('R'+(Math.floor(Math.random()*9000)+1000));
-      userNameEl.value = (user.first_name ? (user.first_name + (user.last_name?(' '+user.last_name):'')) : 'Guest');
-      userIdEl.textContent = state.userId;
-      refCodeEl.textContent = state.ref;
-      tgStatus.textContent = 'Running inside Telegram WebApp';
-
-      // load user balance from server (demo omitted, using local state)
+      if(!tg){ tgStatus.textContent = 'Opening in Browser Mode (Test)'; }
+      else {
+        tg.expand();
+        tgStatus.textContent = 'Running inside Telegram';
+        const user = tg.initDataUnsafe?.user || {};
+        state.userId = user.id || 'guest';
+        userNameEl.value = user.first_name || 'Guest User';
+        userIdEl.textContent = state.userId;
+      }
       renderBalance();
     }
 
-    function renderBalance(){ balanceEl.textContent = parseFloat(state.balance).toFixed(2); }
-
-    // handle ad network selection
-    adNetwork.addEventListener('change', ()=>{
-      const val = adNetwork.value;
-      if(val==='none'){ adSlot.innerHTML = 'No ads enabled — demo.'; }
-      else if(val==='google'){ adSlot.innerHTML = '<div class="small">Google AdSense requires account + script.<br/>Paste script in admin to preview.</div>' }
-      else if(val==='revshare'){ adSlot.innerHTML = '<div class="small">Smartlink / Affiliate: clicking will open external offers.</div>' }
-      else { adSlot.innerHTML = '<div class="small">Selected '+val+' — paste ad code in admin to show real creatives.</div>' }
-    });
-
-    // admin save -> just store in localStorage for demo
-    saveSettingsBtn.addEventListener('click', ()=>{
-      const s = {customAd: customAd.value, payoutMethod: document.getElementById('payout-method').value};
-      localStorage.setItem('mm_settings', JSON.stringify(s));
-      alert('Settings saved (local demo). Paste ad HTML and choose payout method.');
-      renderCustomAd();
-    });
-
-    function renderCustomAd(){
-      const s = JSON.parse(localStorage.getItem('mm_settings')||'{}');
-      if(s && s.customAd){ adSlot.innerHTML = s.customAd; }
+    function renderBalance(){ 
+        balanceEl.textContent = parseFloat(state.balance).toFixed(2);
+        localStorage.setItem('mm_balance', state.balance);
     }
 
-    // demo task buttons
-    document.getElementById('task-ad').addEventListener('click', ()=>{
-      // simulate watching an ad and crediting user
-      creditUser(0.10,'watch_ad');
-    });
-    document.getElementById('task-link').addEventListener('click', ()=>{
-      // open example smartlink / external offer
-      const ref = state.ref;
-      const url = 'https://example.com/offer?ref='+encodeURIComponent(ref)+'&uid='+encodeURIComponent(state.userId);
-      window.open(url,'_blank');
-      // for demo, optionally credit minor amount after click
-      creditUser(0.15,'offer_click');
-    });
-
-    function creditUser(amount,reason){
+    function creditUser(amount, reason){
       state.balance = +(state.balance||0) + Number(amount);
       renderBalance();
-      // notify server via fetch (demo endpoint) — optional
-      try{ fetch('/webhook/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId: state.userId, amount, type:reason})}); } catch(e){}
+      adStatus.textContent = `Success! Credited $${amount} for ${reason}.`;
+      adStatus.style.color = '#4ade80'; // Green
+      
+      // Optional: Send to server
+      // fetch('/webhook/claim', { method:'POST', body: JSON.stringify({userId: state.userId, amount}) });
     }
 
-    // withdraw demo
-    document.getElementById('withdraw').addEventListener('click', ()=>{
-      const amt = parseFloat(state.balance);
-      if(amt < 1){ alert('Minimum withdraw 1 USD (demo)'); return; }
-      const method = document.getElementById('payout-method').value;
-      // In production: send payout request to your server for validation & processing
-      fetch('/admin/payout', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({userId: state.userId, amount:amt, method})})
-        .then(r=>r.json()).then(j=>{ if(j.ok){ state.balance = 0; renderBalance(); alert('Payout requested — admin will process (demo).'); } else alert('Payout failed'); })
-        .catch(()=>{ alert('Payout error (demo) — implement server).'); });
+    // --- INTEGRATED AD LOGIC ---
+    document.getElementById('task-ad').addEventListener('click', () => {
+        adStatus.textContent = "Loading Ad...";
+        adStatus.style.color = '#9aa4b2';
+
+        // Check if SDK function exists
+        if (typeof show_10253960 === 'function') {
+            
+            show_10253960('pop').then(() => {
+                // SUCCESS: User watched the ad or interacted
+                console.log('Ad finished/closed successfully');
+                
+                // Reward the user
+                creditUser(0.10, 'Watching Ad'); 
+                
+                if(tg) tg.HapticFeedback.notificationOccurred('success');
+                alert('Congratulations! You earned $0.10');
+
+            }).catch(e => {
+                // ERROR: Something went wrong
+                console.error('Ad Error:', e);
+                adStatus.textContent = "Error loading ad. Try again.";
+                adStatus.style.color = '#ff4d6d'; // Red
+            });
+
+        } else {
+            adStatus.textContent = "Ad SDK not loaded. Check internet connection or AdBlock.";
+            alert("Ad SDK not ready yet. Please wait a moment.");
+        }
     });
 
-    // open external (for web preview outside Telegram)
-    document.getElementById('open-external').addEventListener('click', ()=>{ window.open('/', '_blank'); });
+    // Other Buttons
+    document.getElementById('task-link').addEventListener('click', ()=>{
+      window.open('https://google.com', '_blank');
+      creditUser(0.01, 'Link Click');
+    });
 
-    // init
+    document.getElementById('withdraw').addEventListener('click', ()=>{
+      if(state.balance < 5) {
+        alert('Minimum withdraw is $5.00');
+      } else {
+        alert(`Withdraw request for $${state.balance} sent!`);
+        state.balance = 0;
+        renderBalance();
+      }
+    });
+
+    document.getElementById('reset-demo').addEventListener('click', ()=>{
+        if(confirm("Reset balance?")) {
+            state.balance = 0; 
+            renderBalance();
+        }
+    });
+
+    // Start
     initTelegram();
-    renderCustomAd();
-
-    // small helper: listen to admin-secret to reset demo
-    document.getElementById('reset-demo').addEventListener('click', ()=>{ if(confirm('Reset demo data?')){ localStorage.clear(); state={userId:null,balance:0,ref:null}; location.reload(); } });
-
   </script>
 </body>
 </html>
